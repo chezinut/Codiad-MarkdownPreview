@@ -167,15 +167,66 @@ codiad.LivePreviewHelper = {
             if (! iframe) {
                 return;
             }
-            if ('srcdoc' in iframe) {
-                //srcdoc parses the string as a real document, so <head>,
-                //<body> and the preview stylesheet link are applied correctly
-                iframe.srcdoc = content;
-            } else {
-                $(iframe).contents().find('html').html(content);
-            }
+            this.writeContent(iframe, content);
         } else {
             $(selector).html(content);
+        }
+    },
+
+    /**
+     * Write a complete HTML document into the preview iframe.
+     * An already rendered document is patched in place so the scroll
+     * position survives every update instead of jumping back to the top.
+     *
+     * @param {Element} iframe Preview iframe
+     * @param {string} content Complete HTML document
+     */
+    writeContent: function(iframe, content) {
+        var doc = null, win = null;
+        try {
+            win  = iframe.contentWindow;
+            doc  = iframe.contentDocument || (win && win.document);
+        } catch (e) {
+            doc = null;
+        }
+        //Only patch a document that was fully rendered by us, otherwise
+        //(first render or still loading) fall back to a normal srcdoc load.
+        var rendered = iframe.hasAttribute('srcdoc') && doc && win
+                    && doc.readyState === 'complete' && doc.body && doc.head
+                    && doc.head.querySelector('link[rel="stylesheet"], style');
+        if (rendered) {
+            var parsed = null;
+            try {
+                parsed = new DOMParser().parseFromString(content, 'text/html');
+            } catch (e) {
+                parsed = null;
+            }
+            if (parsed && parsed.body && parsed.head) {
+                var scrollX = win.pageXOffset || 0,
+                    scrollY = win.pageYOffset || 0;
+                if (parsed.title) {
+                    doc.title = parsed.title;
+                }
+                if (doc.head.innerHTML !== parsed.head.innerHTML) {
+                    doc.head.innerHTML = parsed.head.innerHTML;
+                }
+                doc.body.innerHTML = parsed.body.innerHTML;
+                win.scrollTo(scrollX, scrollY);
+                return;
+            }
+        }
+        if ('srcdoc' in iframe) {
+            //srcdoc parses the string as a real document, so <head>,
+            //<body> and the preview stylesheet link are applied correctly
+            iframe.srcdoc = content;
+        } else {
+            var contents = $(iframe).contents(),
+                scrollLeft = contents.scrollLeft(),
+                scrollTop = contents.scrollTop();
+            contents.find('html').html(content);
+            if (win && win.scrollTo) {
+                win.scrollTo(scrollLeft, scrollTop);
+            }
         }
     },
 
