@@ -55,10 +55,6 @@
                 var ext = _this.getExtension(path);
                 if (ext == "md" || ext == "markdown") {
                     _this.livePreview();
-                    //Weired workaround
-                    setTimeout(function(){
-                        _this.livePreview();
-                    },100);
                     return false;
                 }
             });
@@ -85,7 +81,7 @@
             }
             $.getScript(this.path+"markdown.js");
             //Load template
-            $.get(this.path+'livePreviewTemplate.html', function(template){
+            this.templateReady = $.get(this.path+'livePreviewTemplate.html', function(template){
                 _this.livePreviewTemplate = template;
             });
         },
@@ -155,7 +151,9 @@
                     }
                     $.post("https://api.github.com/markdown", JSON.stringify(_this.defObj),function(text){
                         try {
-                            var result = $.parseJSON(text);
+                            // jQuery only auto-decodes application/json replies, so a string
+                            // here is the markdown HTML GitHub returned on success.
+                            var result = (typeof text === 'object') ? text : $.parseJSON(text);
                             codiad.message.warning(result.message);
                             _this.parse("js", callback);
                         } catch (e) {
@@ -239,14 +237,22 @@
         //  Handle live preview
         //
         //////////////////////////////////////////////////////////
-        livePreview: function() {
-            var content = codiad.editor.getContent();
-            content     = markdown.toHTML(content, 'Maruku');
-            content     = this.livePreviewTemplate
-                                .replace('__content_', content)
-                                .replace('__title__', codiad.active.getPath())
-                                .replace('__PATH__', this.path);
-            codiad.LivePreviewHelper.updateContent(content);
+livePreview: function() {
+            var _this = this;
+            var render = function() {
+                var content = codiad.editor.getContent();
+                content     = markdown.toHTML(content, 'Maruku');
+                content     = _this.livePreviewTemplate
+                                    .replace('__content__', content)
+                                    .replace('__title__', codiad.active.getPath())
+                                    .replace('__PATH__', _this.path);
+                codiad.LivePreviewHelper.updateContent(content);
+            };
+            if (this.templateReady && $.isFunction(this.templateReady.always)) {
+                this.templateReady.always(render);
+            } else {
+                render();
+            }
         },
         
         //////////////////////////////////////////////////////////

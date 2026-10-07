@@ -3,9 +3,11 @@
     position: absolute;
     right: 0;
     width: 50%;
+    background: #ffffff;
 }
 
 .preview iframe {
+  background: #ffffff;
   border-left: 6px solid #474747;
   height: 100%;
   width: 100%;

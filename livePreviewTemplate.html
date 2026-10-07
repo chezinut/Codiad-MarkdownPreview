@@ -10,6 +10,22 @@
     <meta charset="UTF-8">
     <title>__title__</title>
     <link rel="stylesheet" href="__PATH__markdown.css">
+    <style>
+        /* The preview iframe has no src, so its document canvas is
+           transparent and Codiad's dark theme (#1a1a1a) shows through
+           unless the root element paints an opaque background itself. */
+        html {
+            background: #fff;
+        }
+        body {
+            width: auto;
+            max-width: 45em;
+            margin: 10px auto;
+            padding: 1em;
+            outline: none;
+            overflow-wrap: break-word;
+        }
+    </style>
 </head>
 <body>
 __content__

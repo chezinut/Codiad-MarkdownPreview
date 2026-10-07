@@ -112,7 +112,7 @@ codiad.LivePreviewHelper = {
      */
     show: function(path) {
     	//If the window is divided?
-        if ($('.editor').size() > 1) {
+        if ($('.editor').length > 1) {
             codiad.message.error("Livepreview does not work with splited windows");
             return false;
         }
@@ -161,9 +161,19 @@ codiad.LivePreviewHelper = {
      */
     updateContent: function(selector, content) {
         if (typeof(content) == 'undefined') {
-            //No selector
+            //No selector, content is a complete HTML document
             content = selector;
-            $('.preview iframe').contents().find('html').html(content);
+            var iframe = $('.preview iframe').get(0);
+            if (! iframe) {
+                return;
+            }
+            if ('srcdoc' in iframe) {
+                //srcdoc parses the string as a real document, so <head>,
+                //<body> and the preview stylesheet link are applied correctly
+                iframe.srcdoc = content;
+            } else {
+                $(iframe).contents().find('html').html(content);
+            }
         } else {
             $(selector).html(content);
         }
